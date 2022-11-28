@@ -1,0 +1,265 @@
+--11.  Formulați în  limbaj  natural și  implementați 5 cereri  SQL  complexe.
+--Sa se afiseze id-ul jucatorului, numele ;i prenumele concatenate, vârsta, anul când au devenit jucători profesioniști, genul cu denumire sugestive, pentru jucătorii care fac parte din echipe aparținând regiunii 'America de Nord', care au participat la un turneu ce are au date te start în primele 6 luni ale anului. Datele sunt ordonate după vârsta jucătorului.
+
+
+
+select j.id_jucator as "ID-ul jucatorului" , concat(j.nume,' ',j.prenume) as "Numele sportivului", 
+j.varsta as "Varsta jucator", YEAR(j.ad_devenit_pro) as "Anul inceperii activitatii", 
+j.gen as "Genul jucatorului", e.nume as "Nume Echipa" 
+from Jucator j join Echipa e on(e.id_echipa=j.id_echipa)
+join Regiune r on(r.id_regiune = e.id_regiune)
+join Joaca jc on(jc.id_echipa = e.id_echipa)
+join Turneu t on(jc.id_turneu = t.id_turneu)
+where (r.nume = 'America de Nord' and  Month(t.data_inceput)<=6)
+order by "Varsta jucator";
+
+
+--Să se afișeze id-ul echipei, numele Echipei, vechimea echipei, numele proprietarului, Anul aderării la liga mondială a echipelor, sau 0 dacă nu a aderat încă, 
+--numele și prenumele mentorului(concatenate), precum și numărul de jucători despre care avem înregistrări în tabel, pentru echipele care au participat la 
+--turnele care s-au încheiat cu cel mult un an în urmă, au mentorul mai tânar de 30 de ani și numele locației începe cu litera A. Rezultatele vor fi ordonate descrescător după numele echipei.
+
+
+select e.id_echipa as "ID-ul Echipei", e.nume as "Numele echipei", 
+DATEDIFF(year,e.an_infiintare,getdate()) as "Vechime Echipa in ani", 
+e.Proprietar as "Nume Proprietar", ISNULL(year(e.data_aderare),0) as "An aderare liga mondiala", 
+concat(m.nume,' ',m.prenume) as "Numele mentorului", 
+(select count(*)
+from Jucator where id_echipa = e.id_echipa) as "Numar jucatori înregistra?i"						
+from Echipa e join Mentor m on(m.id_echipa=e.id_echipa)
+join Joaca j on(j.id_echipa=e.id_echipa)
+join Turneu t on(t.id_turneu = j.id_turneu)
+join Locatie l on(l.id_turneu = t.id_turneu)
+where DATEDIFF(day,t.data_incheiat,GETDATE())<365  and m.varsta<25 and SUBSTRING(l.nume,1,1) in ('A')
+ORDER BY "Numele echipei" DESC;
+
+--Să se afișeze ID-ul dezvoltatorului, numele dezvoltatorului, anul înființării dezvoltatorului și proprietarul, și un mesaj potrivit în funcție de tipul companiei, 
+--pentru dezvoltatorii ai căror jocuri au media scorurilor mai mare decât 70 și care este jucat de un jucător care aparține echipelor cu ID-ul >100. 
+--Rezultatele for fi ordonate după proprietar.
+
+
+select id_dezvoltator as "ID-ul dezvoltatorului", 
+nume as "Numele dezvoltatorului", Year(an_infiintare) as "Anul infiintarii", 
+proprietar as "Proprietarul companiei", 
+IIF(tip='Public', 'Compania lucreaz? activ cu publicul', 'Compania nu accept? publicul') as "Relatia cu publicul"
+from Dezvoltator 
+where id_dezvoltator IN (select id_dezvoltator
+
+						from Joc_Video
+						where id_joc_video IN ( select id_joc_video
+														from Jocuri_Jucator
+														where (scor_critici+scor_utilizatori)/2>70 and id_jucator IN(select id_jucator
+																			from Jucator
+																			where id_echipa IN (select id_echipa
+																								from Echipa
+																								where id_echipa > 100 
+																								)
+																			)
+													)
+						)
+order by proprietar;
+
+
+
+--Să se afișeze id_echipei și suma totală a sponsorizărilor pentru fiecare echipă, precum și tipul echipei conform cazului CASE.
+
+
+with Sponsorizari as(select id_echipa, sum(suma_sponsorizare) Total
+from Sponsorizeaza
+group by id_echipa
+)
+select id_echipa, Total, 
+case when Total > 600 then 'Castiguri mari'
+	when Total >300 then 'Castigrui medii' 
+	else 'Castiguri mici'END 
+	as "Tip echipa conform incasarilor"
+from Sponsorizari;
+
+
+--Să se afișeze id-ul, durata meciurilor, tipul meciurilor conform cazului CASE pentru meciurile cu acelasi (ID/10) cu echipele (diferită de echipa care joacă meciul) 
+--care s-au înființat în urma cu un număr de ani egal cu experiența unor mentori. Rezultatele vor fi grupate după id-ul meciului și durata sa 
+--și se for afisa doar acele care au o durata mai mare de 30 de minute.
+
+
+select* from meci;
+
+select m.id_meci, m.durata,
+case  when m.durata<=30 then 'meci scurt' 
+	when  m.durata<=45 then 'meci normal' 
+	else 'meci lung' END as "Tip meci"
+from Meci m join Joaca j on(j.id_meci=m.id_meci)
+where m.id_meci in(select (e.id_echipa/10)
+					from Echipa e
+					where j.id_echipa!=e.id_echipa
+					and  DATEDIFF(year,e.an_infiintare,GETDATE()) in(select mt.ani_experienta
+																	from Mentor mt
+																	where mt.ani_experienta = DATEDIFF(year,e.an_infiintare,GETDATE())
+																	)
+					)
+GROUP BY m.id_meci, m.durata
+HAVING m.durata > 30;
+
+
+
+
+--12. Implementarea a 3 operații de actualizare sau suprimare a datelor utilizând subcereri.
+
+--Să se majoreze cu 10% sponsorizarile pentru echipele cu o vechime mai mare de 7 ani decât data curentă și care fac parte din liga mondială a echipelor de gaming.
+
+
+select * from Sponsorizeaza
+update Sponsorizeaza
+set suma_sponsorizare = suma_sponsorizare * 1.1
+where id_echipa IN(select id_echipa
+					from Echipa
+					where datediff(month,an_infiintare,getdate()) > 84 and
+					tip_echipa = 'liga'
+					)
+select* from sponsorizează;
+
+
+--Să se șteargă din tabelul de dezvoltatori, dezvoltatorii care nu au niciun joc înregistrat in tabelul de jocuri video. 
+
+
+
+
+select* from Dezvoltator;
+delete 
+from Dezvoltator
+where id_dezvoltator not in(select id_dezvoltator
+							from Joc_Video
+							);
+select* from Dezvoltator;
+
+--Să se adauge 1 an experiență mentorilor care au mai mult de 30 ani si echipa pe care o antreneaza s-a înființat cu mai mult de 5 ani în urmă.
+
+select * from Mentor
+update Mentor
+set ani_experienta = ani_experienta + 1
+where id_mentor IN(select id_mentor
+					from Echipa
+					where datediff(month,an_infiintare,getdate()) > 60 and
+					tip_echipa = 'liga'
+					)
+select* from Mentor;
+
+--13. Crearea unei secvențe ce va fi utilizatăîn inserarea înregistrărilor în tabele
+
+Create Sequence seq_Regiune
+start with 1
+increment by 1
+maxvalue 100
+NO CYCLE;
+
+--14. Crearea  unei  vizualizări  compuse.  Dați  un  exemplu  de  operație  LMD permisăpe vizualizarea respectivă și un exemplu de operație LMD nepermisă.
+
+GO
+CREATE VIEW
+Viz 
+AS
+select concat(j.nume,' ',j.prenume) as "Nume jucator", 
+		j.varsta as "Varsta Jucator" ,e.nume as "Nume Echipa",
+		concat(m.nume,' ',m.prenume) as "Nume Mentor"
+from echipa e join Jucator j on (e.id_echipa = j.id_echipa)
+			join Mentor m on(m.id_echipa=e.id_echipa)
+where j.varsta>22;
+
+select* from viz;
+update viz
+set [Varsta Jucator] = [Varsta Jucator]+1  ;
+--update viz
+--set [Varsta Jucator] = [Varsta Jucator]+1, [Nume Mentor] = concat('Mr ',[Nume Mentor]) ;
+
+
+
+--15.Crearea  unui  index  care  să optimizeze  o  cerere  de  tip  căutare 
+-- cu  2  criterii.  Specificați cererea.
+
+CREATE INDEX mentor_nume_varsta_idx
+on Mentor(nume,varsta)
+
+select Count(*) as "Numar Mentori"
+from mentor
+where varsta >22 and nume like 'A%'
+select* from mentor;
+
+
+--16. Formulați în limbaj natural și implementați în SQL: o cerere ce utilizează operația outer-joinpe minimum 4 tabele și douăcererice utilizeazăoperațiadivision.
+
+--Să se afișeze pentru fiecare jucator care are înregistrări despre jocurile pe care le joacă id-ul echipei din care face parte, numele 
+--fiecărui joc și numărul  de ore jucate pentru fiecare dintre acestea.
+
+select concat(j.nume,' ',j.prenume) as "Nume jucator", e.id_echipa as "ID-ul echipei", Jc.nume as "Nume Joc", jj.numar_ore as "Numar ore jucate"
+from Jucator j left outer join  Echipa e on (j.id_echipa=e.id_echipa)
+right outer join Jocuri_Jucator jj on(jj.id_jucator=j.id_jucator)
+left outer join Joc_Video jc on(jc.id_joc_video=jj.id_joc)
+order by "Nume jucator";
+
+--Selectează detaliile despre meciurile jucate de toate echipele al căror mentor este mai tânăr de 25 de ani.
+
+select *
+from Meci m  join Joaca j on(j.id_meci=m.id_meci)
+where not exists(
+	select id_echipa
+	from echipa
+	where id_echipa = j.id_echipa
+	except
+	select id_echipa
+	from Mentor
+	where varsta <25
+	);
+
+	select* from mentor;
+	select* from Dezvoltator;
+
+-- Să se afișeze detaliile despre jocurile care nu sunt dezvoltate de Ubisoft si despre care avem măcar o înregistrare în tabelul de Jocuri_jucatori.
+
+	select* 
+	from Joc_Video j
+	where not exists(
+		select id_dezvoltator
+		from Dezvoltator
+		where id_dezvoltator = j.id_dezvoltator
+		except
+		select id_dezvoltator
+		from Dezvoltator
+		where nume != 'Ubisoft'
+		)
+	and j.id_joc_video in(select id_joc
+					from Jocuri_Jucator);
+
+--17. Optimizarea  unei  cereri,  aplicând  regulile  de  optimizare  ce  derivă  din  proprietățile operatorilor algebrei relaționale. 
+--Cererea va fi exprimatăprin expresie algebrică, arbore algebric și limbaj (SQL), atât anterior cât și ulterior optimizării.
+--Să se afișeze numele echipei, și suma primită din partea sponsorilor pentru fiecare sponsorizare în parte pentru echipele care au
+--câștigat cel puțin un meci, au sponsorizarea valorează cel puțin 300 și al căror mentor are o experiență mai mare de 5 ani.
+
+select e.nume as"Nume echipa",s.suma_sponsorizare as "Suma sponsorizare(sute de mii de dolari)"
+from Echipa e join Mentor m on(m.id_echipa = e.id_echipa)
+join Sponsorizeaza s on(s.id_echipa=e.id_echipa)
+join Joaca j on (j.id_echipa=e.id_echipa)
+where m.varsta in (select varsta
+					from Mentor me
+					where me.id_echipa = m.id_echipa and me.ani_experienta>5)
+					
+and j.rezultat in(select rezultat
+					from Joaca jo
+					where jo.id_echipa = j.id_echipa and jo.rezultat='castigat'
+					)
+and s.suma_sponsorizare in(select suma_sponsorizare
+								from Sponsorizeaza sp
+								where sp.id_echipa= s.id_echipa and sp.suma_sponsorizare>300);
+
+select e.nume as"Nume echipa",s.suma_sponsorizare as "Suma sponsorizare(sute de mii de dolari)"
+from ( select id_echipa
+		from Mentor 
+		where ani_experienta > 5) m 
+		join (select nume,id_echipa
+				from Echipa
+			) e on (e.id_echipa = m.id_echipa)
+		join(select id_echipa
+			from Joaca
+			where rezultat = 'castigat'
+			) c on(c.id_echipa = e.id_echipa)
+		join(select suma_sponsorizare,id_echipa
+			from Sponsorizeaza
+			where suma_sponsorizare > 300
+			) s on (e.id_echipa = s.id_echipa);

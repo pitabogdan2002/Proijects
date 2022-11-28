@@ -1,0 +1,465 @@
+create table Sponsor
+(
+id_sponsor INTEGER constraint id_sponsor_pk Primary Key,
+nume VARCHAR(255) constraint nume_sponsor_nn NOT NULL,
+Incasari FLOAT(10) constraint incasari_nn NOT NULL,
+);
+
+create table Regiune
+(
+id_regiune INTEGER constraint id_regiune_pk Primary Key,
+nume VARCHAR(255) constraint nume_nn NOT NULL
+);
+
+create table Faza
+(
+id_faza INTEGER constraint id_faza_pk Primary Key,
+nume VARCHAR(255) constraint nume_faza_nn NOT NULL
+);
+
+create table Dezvoltator
+(
+id_dezvoltator INTEGER constraint id_dezvoltator_pk Primary Key,
+nume VARCHAR(200) constraint nume_dezvoltator_nn NOT NULL,
+an_infiintare DATE constraint an_infiintare_dezvoltator_nn NOT NULL,
+tip VARCHAR(255) constraint tip_dezvoltator CHECK(tip='Privat' or tip='Public'),
+proprietar VARCHAR(255) constraint proprietar_dezvoltator_nn NOT NULL
+);
+
+
+
+create table Joc_Video
+(
+id_joc_video INTEGER constraint id_joc_video_pk Primary Key,
+nume VARCHAR(255) constraint nume_joc_video_nn NOT NULL,
+gen VARCHAR(50) constraint gen_joc_video_nn NOT NULL,
+an_aparitie DATE constraint an_aparitie_joc_nn NOT NULL,
+scor_critici INTEGER constraint scor_critici_range CHECK(scor_critici<=100 and scor_critici>=0),
+scor_utilizatori INTEGER constraint scor_utilizatori_range CHECK(scor_utilizatori<=100 and scor_utilizatori>=0),
+id_dezvoltator INTEGER constraint id_dezvoltator_fk Foreign Key References Dezvoltator(id_dezvoltator)
+);
+
+
+create table Echipa
+(
+id_echipa INTEGER constraint id_echipa_pk Primary Key,
+nume VARCHAR(255) constraint nume_echipa_nn NOT NULL,
+an_infiintare DATE constraint data_infiintare_echipa NOT NULL,
+Proprietar VARCHAR(100) constraint proprietar_echipa NOT NULL,
+tip_echipa VARCHAR(100) constraint tip_echipa_mostenire CHECK(tip_echipa='Liga' or tip_echipa='Independenta'),
+data_aderare DATE,
+id_regiune INTEGER constraint id_regiune_fk Foreign Key References Regiune(id_regiune)
+);
+
+
+
+create table Mentor
+(
+id_mentor INTEGER constraint id_mentor_pk Primary Key,
+nume VARCHAR(200) constraint nume_mentor_nn NOT NULL,
+prenume VARCHAR(200) constraint prenume_mentor_nn NOT NULL,
+varsta INTEGER constraint varsta_mentor_maxima CHECK(varsta<35),
+ani_experienta INTEGER constraint ani_experienta_nn NOT NULL,
+id_echipa INTEGER constraint id_echipa_fk Foreign Key References Echipa
+);
+
+
+create table Meci
+(id_meci INTEGER constraint id_meci_pk Primary Key,
+durata INTEGER constraint durata_meci_nn NOT NULL,
+id_faza INTEGER constraint id_faza_meci_fk Foreign Key References Faza(id_faza)
+);
+
+create table Turneu
+(
+id_turneu INTEGER constraint id_turneu_pk Primary Key,
+nume VARCHAR(255) constraint nume_turneu_nn NOT NULL,
+premiu FLOAT constraint premiu_turneu_min CHECK(premiu>3000),
+data_inceput DATE constraint data_inceput_turneu_nn NOT NULL,
+data_incheiat DATE constraint data_incheiat_turneu_nn NOT NULL,
+taxa_inscriere FLOAT
+);
+
+create table Joaca
+(
+id_turneu INTEGER constraint id_turneu_fk Foreign Key References Turneu(id_turneu),
+id_echipa INTEGER constraint id_echipa_joaca_fk Foreign Key References Echipa(id_echipa),
+id_meci INTEGER constraint id_meci_fk Foreign Key References Meci(id_meci),
+CONSTRAINT PK_Joaca PRIMARY KEY(id_turneu,id_echipa,id_meci)
+);
+
+alter table Joaca
+add rezultat varchar(40);
+
+
+create table Sponsorizeaza
+(
+id_echipa INTEGER constraint id_echipa_sponsorizata_fk Foreign Key References Echipa(id_echipa),
+id_sponsor INTEGER constraint id_sponsor_sponsorizeaza_fk Foreign Key References Sponsor(id_sponsor),
+suma_sponsorizare FLOAT constraint suma_sponsorizare_nn NOT NULL,
+data_inceput DATE constraint data_inceput_sponsorizare_nn NOT NULL,
+CONSTRAINT PK_Sponsorizeaza PRIMARY KEY(id_echipa,id_sponsor)
+);
+
+create table Locatie
+(
+id_locatie INTEGER constraint id_locatie_pk Primary Key,
+nume VARCHAR(255) constraint nume_nn NOT NULL,
+id_turneu INTEGER constraint id_turneu_locatie_fk Foreign Key References Turneu(id_turneu)
+);
+
+create table Jucator
+(
+id_jucator INTEGER constraint id_jucator_pk Primary Key,
+nume VARCHAR(255) constraint nume_jucator_nn NOT NULL,
+prenume VARCHAR(255) constraint prenume_jucator_nn NOT NULL,
+varsta INTEGER constraint varsta_jucator_maxima CHECK(varsta<30),
+gen char(1) constraint genul_jucatorului CHECK(gen='M' or gen='F'),
+ad_devenit_pro DATE constraint an_devenit_pro_jucator_nn NOT NULL,
+id_echipa INTEGER constraint id_echipa_jucator_fk Foreign Key References Echipa(id_echipa)
+);
+
+create table Jocuri_Jucator
+(id_joc INTEGER constraint id_joc_FK Foreign Key References Joc_Video(id_joc_video),
+id_jucator INTEGER constraint id_jucator_FK Foreign Key References Jucator(id_jucator),
+numar_ore INTEGER,
+CONSTRAINT PK_Jocuri_Jucator PRIMARY KEY(id_joc,id_jucator)
+)
+
+
+
+Create Sequence seq_Regiune
+start with 1
+increment by 1
+maxvalue 100
+NO CYCLE;
+
+INSERT INTO	Regiune
+Values (NEXT VALUE FOR seq_Regiune,'Europa de Nord si Est'),
+(NEXT VALUE FOR seq_Regiune,'Europa de Vest'),
+(NEXT VALUE FOR seq_Regiune,'America de Nord'),
+(NEXT VALUE FOR seq_Regiune,'America Latina de Nord'),
+(NEXT VALUE FOR seq_Regiune,'America Latina de Sud'),
+(NEXT VALUE FOR seq_Regiune,'Brazilia'),
+(NEXT VALUE FOR seq_Regiune,'Rusia'),
+(NEXT VALUE FOR seq_Regiune,'Japonia'),
+(NEXT VALUE FOR seq_Regiune,'Turcia'),
+(NEXT VALUE FOR seq_Regiune,'Oceania'),
+(NEXT VALUE FOR seq_Regiune,'Coreea de Sud');
+
+Create Sequence seq_Faza
+start with 1
+increment by 1
+maxvalue 100
+NO CYCLE;
+
+INSERT INTO	Faza
+Values (NEXT VALUE FOR seq_Faza,'Runda 1'),
+(NEXT VALUE FOR seq_Faza,'Runda 2'),
+(NEXT VALUE FOR seq_Faza,'Runda 3'),
+(NEXT VALUE FOR seq_Faza,'Runda 4'),
+(NEXT VALUE FOR seq_Faza,'Sferturi'),
+(NEXT VALUE FOR seq_Faza,'Semifinale'),
+(NEXT VALUE FOR seq_Faza,'Finala');
+
+
+
+Create Sequence seq_Sponsor
+start with 10
+increment by 10
+maxvalue 1000
+NO CYCLE;
+
+INSERT INTO	Sponsor
+Values (NEXT VALUE FOR seq_Sponsor,'DELL','35.42'),
+(NEXT VALUE FOR seq_Sponsor,'HP','70.43'),
+(NEXT VALUE FOR seq_Sponsor,'MSI','40.32'),
+(NEXT VALUE FOR seq_Sponsor,'RAZER','80.51'),
+(NEXT VALUE FOR seq_Sponsor,'LEGION','25.43'),
+(NEXT VALUE FOR seq_Sponsor,'SKYTECH','45.95'),
+(NEXT VALUE FOR seq_Sponsor,'GIGABYTE','60.72'),
+(NEXT VALUE FOR seq_Sponsor,'OVER POWERED','32.33'),
+(NEXT VALUE FOR seq_Sponsor,'iBUYPOWER', '70.58'),
+(NEXT VALUE FOR seq_Sponsor,'ASUS', '67.35'),
+(NEXT VALUE FOR seq_Sponsor,'LOGITECH','55.52'),
+(NEXT VALUE FOR seq_Sponsor,'NVIDIA','45.32'),
+(NEXT VALUE FOR seq_Sponsor,'HYPERX','20.32');
+
+
+
+
+Create Sequence seq_Dezvoltator
+start with 1
+increment by 1
+maxvalue 1000
+NO CYCLE;
+
+INSERT INTO	Dezvoltator
+Values (NEXT VALUE FOR seq_Dezvoltator,'Nintendo', '1989-01-01','Privat','Shuntaro Furukawa'),
+(NEXT VALUE FOR seq_Dezvoltator,'Valve Corporation','1996-01-01','Privat','Gabe Newell'),
+(NEXT VALUE FOR seq_Dezvoltator,'Rockstar Games','1998-01-01','Privat','Sam Houser'),
+(NEXT VALUE FOR seq_Dezvoltator,'Electronic Arts','1982-01-01','Public','Andrew Wilson'),
+(NEXT VALUE FOR seq_Dezvoltator,'Activision Blizzard','2008-01-01','Privat','Bobby Kotick'),
+(NEXT VALUE FOR seq_Dezvoltator,'Sony Computer Entertainment','1993-01-01','Public','Jim Ryan'),
+(NEXT VALUE FOR seq_Dezvoltator,'Ubisoft','1986-01-01','Privat','Yves Guillemot'),
+(NEXT VALUE FOR seq_Dezvoltator,'Sega Games Co. Ltd','1951-01-01','Public','Mike Rayson'),
+(NEXT VALUE FOR seq_Dezvoltator,'Riot Games','2006-01-01','Privat','Nicolo Laurent'),
+(NEXT VALUE FOR seq_Dezvoltator,'Epic Games','1991-01-01','Privat','Tim Sweeney');
+INSErt INTO Dezvoltator
+Values(next value for seq_Dezvoltator-2, 'Xbox','1990-01-01','Privat','Neil Dame');
+
+
+
+Create Sequence seq_JocVideo
+start with 1
+increment by 1
+maxvalue 1000
+NO CYCLE;
+
+INSERT INTO	Joc_Video
+Values (NEXT VALUE FOR seq_JocVideo,'League of Legends', 'Aventura','2009-01-01','85','95','9'),
+(NEXT VALUE FOR seq_JocVideo,'Counter-Strike: Global Offensive', 'Actiune','2012-01-01','73','90','2'),
+(NEXT VALUE FOR seq_JocVideo,'Legends of Runeterra', 'Mister','2019-01-01','93','92','9'),
+(NEXT VALUE FOR seq_JocVideo,'Mario 5', 'Arcade','2015-01-01','53','70','1'),
+(NEXT VALUE FOR seq_JocVideo,'Assassin’s Creed Odyssey', 'Poveste','2017-01-01','82','74','7'),
+(NEXT VALUE FOR seq_JocVideo,'Total War', 'Actiune','2011-01-01','75','70','8'),
+(NEXT VALUE FOR seq_JocVideo,'Fortnite', 'Actiune','2018-01-01','88','91','10'),
+(NEXT VALUE FOR seq_JocVideo,'Far Cry 6', 'Poveste','2021-01-01','74','80','7'),
+(NEXT VALUE FOR seq_JocVideo,'Grand Theft Auto V', 'Actiune','2018-01-01','62','78','3'),
+(NEXT VALUE FOR seq_JocVideo,'Virtua Fighter', 'Tactica','2009-01-01','52','40','8'),
+(NEXT VALUE FOR seq_JocVideo,'Battlefield 2042', 'SF','2021-01-01','49','51','4'),
+(NEXT VALUE FOR seq_JocVideo,'Call of Duty Vanguard', 'Actiune','2022-01-01','92','98','5'),
+(NEXT VALUE FOR seq_JocVideo,'Crash Bandicoot 4', 'Aventura','2020-01-01','34','57','5'),
+(NEXT VALUE FOR seq_JocVideo,'Overwatch', 'Actiune','2016-01-01','73','90','6'),
+(NEXT VALUE FOR seq_JocVideo,'Battle Breakers', 'Violenta','2015-01-01','31','42','10');
+
+Create Sequence seq_Echipa
+start with 10
+increment by 10
+maxvalue 1000
+NO CYCLE;
+
+INSERT INTO	Echipa
+Values (NEXT VALUE FOR seq_Echipa,'Cloud 9','2007-01-01','Clide Tyson','Liga','2017-01-01','3'),
+(NEXT VALUE FOR seq_Echipa,'SKT T1','2009-01-01','Hyeon Chung','Liga','2013-01-01','11'),
+(NEXT VALUE FOR seq_Echipa,'Complexity Gaming','2010-01-01','Carlos Ramires','Independenta',NULL,'4'),
+(NEXT VALUE FOR seq_Echipa,'Dallas Fuel','2008-01-01','Mark Zhile','Liga','2015-01-01','3'),
+(NEXT VALUE FOR seq_Echipa,'Lyon Gaming','2009-01-01','Tomas Berdych','Independenta',NULL,'1'),
+(NEXT VALUE FOR seq_Echipa,'G2 Esports','2008-01-01','Ben Smith','Liga','2012-01-01','1'),
+(NEXT VALUE FOR seq_Echipa,'Invinctus Gaming','2012-01-01','Dane Sloane','Independenta',NULL,'10'),
+(NEXT VALUE FOR seq_Echipa,'KT Rolster','2006-01-01','Miles Claine','Liga','2019-01-01','2'),
+(NEXT VALUE FOR seq_Echipa,'Turkish Gaming','2013-01-01','Emir Turan','Independenta',NULL,'9'),
+(NEXT VALUE FOR seq_Echipa,'Royal Never Give Up','2015-01-01','Xhi Osaka','Independenta',NULL,'8'),
+(NEXT VALUE FOR seq_Echipa,'Thunder Talk Gaming','2017-01-01','Oscar Escobar','Independenta',NULL,'5'),
+(NEXT VALUE FOR seq_Echipa,'Star Lions','2010-01-01','Julio Dante','Liga','2013-01-01','6'),
+(NEXT VALUE FOR seq_Echipa,'Fury of the Gods','2016-01-01','Tod Philips','Liga','2017-01-01','6'),
+(NEXT VALUE FOR seq_Echipa,'Evil Geniuses','2009-01-01','Vladimir Starkov','Independenta',NULL,'7'),
+(NEXT VALUE FOR seq_Echipa,'Strong Tides','2013-01-01','Paul Chatrier','Liga','2017-01-01','2'),
+(NEXT VALUE FOR seq_Echipa,'Team Spirit','2011-01-01','Robert Wane','Liga','2014-01-01','2'),
+(NEXT VALUE FOR seq_Echipa,'Team Liquid','2010-01-01','Tao Shao','Independenta',NULL,'11');
+
+Create Sequence seq_Mentori
+start with 1
+increment by 1
+maxvalue 1000
+NO CYCLE;
+
+INSERT INTO	Mentor
+Values (NEXT VALUE FOR seq_Mentori,'Andrews','Robert','32','9','20'),
+(NEXT VALUE FOR seq_Mentori,'Lane','Marco','21','3','30'),
+(NEXT VALUE FOR seq_Mentori,'Johnson','Steve','25','4','10'),
+(NEXT VALUE FOR seq_Mentori,'Chung','Xio','30','6','140'),
+(NEXT VALUE FOR seq_Mentori,'Alke','Milo','23','5','60'),
+(NEXT VALUE FOR seq_Mentori,'Sandry','Dennis','27','8','50'),
+(NEXT VALUE FOR seq_Mentori,'Lopez','William','22','4','70'),
+(NEXT VALUE FOR seq_Mentori,'Evans','Henry','29','5','90'),
+(NEXT VALUE FOR seq_Mentori,'Vereira','Camille','27','7','160'),
+(NEXT VALUE FOR seq_Mentori,'Cairo','Oliver','20','3','100'),
+(NEXT VALUE FOR seq_Mentori,'Meyer','Alicia','21','2','130'),
+(NEXT VALUE FOR seq_Mentori,'Loss','Don','23','1','170'),
+(NEXT VALUE FOR seq_Mentori,'Vasquez','Paul','23','3','120'),
+(NEXT VALUE FOR seq_Mentori,'Meris','Hugo','32','5','40'),
+(NEXT VALUE FOR seq_Mentori,'Dolores','Gabe','25','2','80'),
+(NEXT VALUE FOR seq_Mentori,'Popescu', 'Marius','27','7','110'),
+(NEXT VALUE FOR seq_Mentori,'Bobby','Craig','34','10','150');
+
+
+
+
+Create Sequence seq_Turnee
+start with 1
+increment by 1
+maxvalue 1000
+NO CYCLE;
+
+INSERT INTO	Turneu
+Values (NEXT VALUE FOR seq_Turnee,'World Cup','3.32','2021-06-19','2021-06-30','3000.00'),
+(NEXT VALUE FOR seq_Turnee,'Global Fighting Contest','1.52','2021-02-02','2021-02-14','321.52'),
+(NEXT VALUE FOR seq_Turnee,'Discovering the Winner','2.12','2021-01-15','2021-01-29','2243.35'),
+(NEXT VALUE FOR seq_Turnee,'Annual Esports Event','3.32','2021-03-22','2021-04-01','2932.91'),
+(NEXT VALUE FOR seq_Turnee,'League of Champions','1.32','2021-12-04','2021-12-12','432.11'),
+(NEXT VALUE FOR seq_Turnee,'Diamonds of the Sport','1.72','2021-04-06','2021-04-20','850.00'),
+(NEXT VALUE FOR seq_Turnee,'Australian Tour','3.52','2021-08-20','2021-08-31','2552.31'),
+(NEXT VALUE FOR seq_Turnee,'Game of a Lifetime','3.12','2021-05-09','2021-05-25','3000.45'),
+(NEXT VALUE FOR seq_Turnee,'Titans Clash','2.82','2021-09-07','2021-09-22','3043.21'),
+(NEXT VALUE FOR seq_Turnee,'Eye of the Hawk','1.02','2021-07-03','2021-07-15','1250.34');
+
+
+
+Create Sequence seq_Locatie
+start with 1
+increment by 1
+maxvalue 1000
+NO CYCLE;
+
+INSERT INTO	Locatie
+Values (NEXT VALUE FOR seq_Locatie,'Global Gaming Club','2'),
+(NEXT VALUE FOR seq_Locatie,'American Sports Hall','5'),
+(NEXT VALUE FOR seq_Locatie,'Gaming Paradise','1'),
+(NEXT VALUE FOR seq_Locatie,'Kingdom of Tech','9'),
+(NEXT VALUE FOR seq_Locatie,'IT Land','10'),
+(NEXT VALUE FOR seq_Locatie,'Esports Game Stadium','4'),
+(NEXT VALUE FOR seq_Locatie,'Melbourne Gaming Center','7'),
+(NEXT VALUE FOR seq_Locatie,'Gamers all Around','3'),
+(NEXT VALUE FOR seq_Locatie,'Global Gaming Arena','8'),
+(NEXT VALUE FOR seq_Locatie,'Techtropolis','6');
+
+
+
+
+
+INSERT INTO	Sponsorizeaza
+Values ('20','10','400','2017-05-03'),
+('20','100','352','2015-09-11'),
+('30','50','120','2019-05-03'),
+('30','10','421','2012-01-15'),
+('10','40','361','2010-07-06'),
+('170','130','190','2011-08-03'),
+('90','30','340','2014-11-25'),
+('70','100','212','2015-05-23'),
+('60','90','215','2015-09-03'),
+('60','40','391','2012-03-01'),
+('130','20','256','2020-09-22'),
+('110','50','81','2019-10-17'),
+('10','120','345','2008-01-19'),
+('70','60','560','2014-07-02'),
+('110','70','213','2018-12-15'),
+('30','80','331','2011-08-27'),
+('100','110','175','2016-09-03');
+
+
+
+Create Sequence seq_Jucator
+start with 1
+increment by 1
+maxvalue 1000
+NO CYCLE;
+
+
+INSERT INTO	Jucator
+Values (NEXT VALUE FOR seq_Jucator,'Clarkson','Eddie',25,'M','2015-01-01',150),
+(NEXT VALUE FOR seq_Jucator,'Flair','Emma',22,'F','2017-01-01',150),
+(NEXT VALUE FOR seq_Jucator,'Lopez','Bryan',26,'M','2013-01-01',120),
+(NEXT VALUE FOR seq_Jucator,'Rodriguez','Rafael',27,'M','2010-01-01',110),
+(NEXT VALUE FOR seq_Jucator,'Craig','Mark',20,'M','2019-01-01',140),
+(NEXT VALUE FOR seq_Jucator,'Miclaus','Honiad',23,'M','2016-01-01',70),
+(NEXT VALUE FOR seq_Jucator,'Thompson','Teressa',22,'F','2017-01-01',70),
+(NEXT VALUE FOR seq_Jucator,'Griffin','Clarissa',21,'F','2019-01-01',10),
+(NEXT VALUE FOR seq_Jucator,'Rylance','Martin',28,'M','2013-01-01',20),
+(NEXT VALUE FOR seq_Jucator,'Eddison','Tom',19,'M','2020-01-01',20),
+(NEXT VALUE FOR seq_Jucator,'Space','Dakota',25,'F','2015-01-01',160),
+(NEXT VALUE FOR seq_Jucator,'Scorsese','Daniel',18,'M','2021-01-01',100),
+(NEXT VALUE FOR seq_Jucator,'Dunkan','Alexander',23,'M','2014-01-01',90);
+
+
+Create Sequence seq_Meci
+start with 1
+increment by 1
+maxvalue 1000
+NO CYCLE;
+
+
+INSERT INTO	Meci
+Values (NEXT VALUE FOR seq_Meci,'45',7),
+(NEXT VALUE FOR seq_Meci,'43',1),
+(NEXT VALUE FOR seq_Meci,'41',7),
+(NEXT VALUE FOR seq_Meci,'35',2),
+(NEXT VALUE FOR seq_Meci,'30',6),
+(NEXT VALUE FOR seq_Meci,'32',6),
+(NEXT VALUE FOR seq_Meci,'55',1),
+(NEXT VALUE FOR seq_Meci,'42',3),
+(NEXT VALUE FOR seq_Meci,'41',4),
+(NEXT VALUE FOR seq_Meci,'33',6),
+(NEXT VALUE FOR seq_Meci,'35',5),
+(NEXT VALUE FOR seq_Meci,'51',1),
+(NEXT VALUE FOR seq_Meci,'62',1),
+(NEXT VALUE FOR seq_Meci,'55',2),
+(NEXT VALUE FOR seq_Meci,'39',2),
+(NEXT VALUE FOR seq_Meci,'40',3),
+(NEXT VALUE FOR seq_Meci,'41',2),
+(NEXT VALUE FOR seq_Meci,'43',3),
+(NEXT VALUE FOR seq_Meci,'48',2),
+(NEXT VALUE FOR seq_Meci,'29',3),
+(NEXT VALUE FOR seq_Meci,'30',4),
+(NEXT VALUE FOR seq_Meci,'54',5),
+(NEXT VALUE FOR seq_Meci,'26',1),
+(NEXT VALUE FOR seq_Meci,'57',2),
+(NEXT VALUE FOR seq_Meci,'44',3),
+(NEXT VALUE FOR seq_Meci,'45',2),
+(NEXT VALUE FOR seq_Meci,'41',6),
+(NEXT VALUE FOR seq_Meci,'46',7);
+
+
+
+
+
+INSERT INTO	Joaca
+Values (4,140,23,'castigat'),
+(5,50,2,'castigat'),
+(1,30,20,'pierdut'),
+(10,10,18,'castigat'),
+(4,150,6,'pierdut'),
+(7,10,1,'pierdut'),
+(4,40,23,'pierdut'),
+(4,90,6,'castigat'),
+(2,10,7,'castigat'),
+(8,50,8,'castigat'),
+(5,120,10,'pierdut'),
+(2,100,7,'pierdut'),
+(5,70,2,'pierdut'),
+(7,20,1,'castigat'),
+(1,70,20,'castigat'),
+(3,50,19,'castigat'),
+(3,60,19,'pierdut'),
+(5,30,10,'castigat'),
+(10,10,27,'castigat'),
+(9,100,24,'castigat');
+
+
+
+select* from Joc_Video;
+select* from Jucator;
+INSERT INTO	Jocuri_Jucator
+Values (15,12,'3550'),
+(10,9,'6550'),
+(15,11,'10000'),
+(11,7,'6254'),
+(10,8,'15550'),
+(3,3,'29312'),
+(1,10,'7840'),
+(2,12,'3410'),
+(3,8,'19230'),
+(4,1,'15540'),
+(6,12,'17520'),
+(3,7,'9550'),
+(12,2,'7550'),
+(6,2,'14450'),
+(6,7,'5550'),
+(9,9,'7600'),
+(1,3,'15940'),
+(4,4,'14500'),
+(3,10,'11350'),
+(10,13,'10550'),
+(12,12,'19350'),
+(7,6,'12000'),
+(8,1,'6794');
