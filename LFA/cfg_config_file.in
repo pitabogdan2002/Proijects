@@ -1,0 +1,31 @@
+#
+# comment  lines  ( skip  them)
+#
+Variables:
+    S
+    A
+    B
+    C
+End
+#
+# comment  lines  ( skip  them)
+#
+Terminals:
+    a
+    b
+End
+#
+# comment  lines  ( skip  them)
+#
+Start:
+    S
+End
+#
+# comment  lines  ( skip  them)
+#
+Rules
+    S,Aa|B
+    A,b|B
+    B,A|a
+    C,B|A|a
+End
